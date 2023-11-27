@@ -29,21 +29,15 @@ fn main() {
 
     let client = Client::new();
     let mut spinner = Spinner::new(Spinners::BouncingBar, "Generating your command...".into());
-    let api_addr = format!("{}/completions", config.api_base);
+    let api_addr = format!("{}/generate", config.api_base);
     let response = client
         .post(api_addr)
         .json(&json!({
-            "top_p": 1,
-            "stop": "```",
-            "temperature": 0,
-            "suffix": "\n```",
-            "max_tokens": 1000,
-            "presence_penalty": 0,
-            "frequency_penalty": 0,
-            "model": "text-davinci-003",
+            "model": "codellama",
+            "stream": false,
+            "system": "You are a helpful assistant who is specialized in generating shell commands to run based on user prompt. Reply only the command and nothing else.",
             "prompt": build_prompt(&cli.prompt.join(" ")),
         }))
-        .header("Authorization", format!("Bearer {}", config.api_key))
         .send()
         .unwrap();
 
@@ -59,14 +53,14 @@ fn main() {
     } else if status_code.is_server_error() {
         spinner.stop_and_persist(
             "✖".red().to_string().as_str(),
-            format!("OpenAI is currently experiencing problems. Status code: {status_code}")
+            format!("Please check if Ollama is up and running. Status code: {status_code}")
                 .red()
                 .to_string(),
         );
         std::process::exit(1);
     }
 
-    let code = response.json::<serde_json::Value>().unwrap()["choices"][0]["text"]
+    let code = response.json::<serde_json::Value>().unwrap()["response"]
         .as_str()
         .unwrap()
         .trim()
