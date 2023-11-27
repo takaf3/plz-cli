@@ -30,10 +30,11 @@ fn main() {
     let client = Client::new();
     let mut spinner = Spinner::new(Spinners::BouncingBar, "Generating your command...".into());
     let api_addr = format!("{}/generate", config.api_base);
+    let model = format!("{}", config.model);
     let response = client
         .post(api_addr)
         .json(&json!({
-            "model": "codellama",
+            "model": model,
             "stream": false,
             "system": "You are a helpful assistant who is specialized in generating shell commands to run based on user prompt. Reply only the command and nothing else.",
             "prompt": build_prompt(&cli.prompt.join(" ")),

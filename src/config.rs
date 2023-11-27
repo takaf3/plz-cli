@@ -4,14 +4,16 @@ use std::{env, io::Write, process::exit};
 pub struct Config {
     pub api_base: String,
     pub shell: String,
+    pub model: String,
 }
 
 impl Config {
     pub fn new() -> Self {
         let api_base = env::var("OLLAMA_API_BASE").unwrap_or_else(|_| String::from("http://localhost:11434/api"));
         let shell = env::var("SHELL").unwrap_or_else(|_| String::new());
+        let model = env::var("PLZ_MODEL_NAME").unwrap_or_else(|_| String::from("codellama"));
 
-        Self { api_base, shell }
+        Self { api_base, shell, model }
     }
 
     pub fn write_to_history(&self, code: &str) {
