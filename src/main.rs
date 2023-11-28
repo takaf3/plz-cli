@@ -131,6 +131,11 @@ fn main() {
 }
 
 fn build_prompt(prompt: &str) -> String {
+    if prompt.trim().is_empty() {
+        eprintln!("Error: The prompt is empty.");
+        std::process::exit(1);
+    }
+
     let os_hint = if cfg!(target_os = "macos") {
         " (on macOS)"
     } else if cfg!(target_os = "linux") {
