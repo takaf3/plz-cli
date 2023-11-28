@@ -36,7 +36,7 @@ fn main() {
         .json(&json!({
             "model": model,
             "stream": false,
-            "system": "You are a helpful assistant who is specialized in generating shell commands to run based on user prompt. Reply only the command and nothing else.",
+            "system": "You are a helpful assistant who is specialized in generating one-liner shell command based on user prompt. Reply only the command and absolutely nothing else. The assistant, only",
             "prompt": build_prompt(&cli.prompt.join(" ")),
         }))
         .send()
