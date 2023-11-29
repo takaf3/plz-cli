@@ -28,6 +28,9 @@ fn main() {
     let config = Config::new();
 
     let client = Client::new();
+    
+    let mut should_run = false;
+
     let mut spinner = Spinner::new(Spinners::BouncingBar, "Generating your command...".into());
     let api_addr = format!("{}/generate", config.api_base);
     let model = format!("{}", config.model);
@@ -79,21 +82,31 @@ fn main() {
         .print()
         .unwrap();
 
-    let should_run = if cli.force {
-        true
-    } else {
-        Question::new(
-            ">> Run the generated program? [Y/n]"
-                .bright_black()
-                .to_string()
-                .as_str(),
-        )
-        .yes_no()
-        .until_acceptable()
-        .default(Answer::YES)
-        .ask()
-        .expect("Couldn't ask question.")
-            == Answer::YES
+    let answer = Question::new(
+        ">> Run the generated program? [Y/n/r]"
+            .bright_black()
+            .to_string()
+            .as_str(),
+    )
+    .default(Answer::YES)
+    .accept("y")
+    .accept("n")
+    .accept("r")
+    .until_acceptable()
+    .ask()
+    .expect("Couldn't ask question.");
+    match answer {
+        Answer::YES => should_run = true,
+        Answer::RESPONSE(response) => {
+            match response.to_lowercase().as_str() {
+                "y" => should_run = true,
+                "r" => should_run = false,
+                _ => {
+                    std::process::exit(0);
+                },
+            }
+        },
+        _ => should_run = false,
     };
 
     if should_run {
