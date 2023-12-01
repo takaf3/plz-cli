@@ -30,95 +30,98 @@ fn main() {
     let client = Client::new();
     
     let mut should_run = false;
+    let mut code = String::new();
 
-    let mut spinner = Spinner::new(Spinners::BouncingBar, "Generating your command...".into());
-    let api_addr = format!("{}/generate", config.api_base);
-    let model = format!("{}", config.model);
-    let response = client
-        .post(api_addr)
-        .json(&json!({
-            "model": model,
-            "stream": false,
-            "system": "You are a helpful assistant who is specialized in generating one-liner shell command based on user prompt. Reply only the command and absolutely nothing else. The assistant, only",
-            "prompt": build_prompt(&cli.prompt.join(" ")),
-        }))
-        .send()
-        .unwrap();
+    while !should_run {
+        let mut sp_cmd_gen = Spinner::new(Spinners::BouncingBar, "Generating your command...".into());
+        let api_addr = format!("{}/generate", config.api_base);
+        let model = format!("{}", config.model);
+        let response = client
+            .post(api_addr)
+            .json(&json!({
+                "model": model,
+                "stream": false,
+                "system": "You are a helpful assistant who is specialized in generating one-liner shell command based on user prompt. Reply only the command and absolutely nothing else. The assistant, only",
+                "prompt": build_prompt(&cli.prompt.join(" ")),
+            }))
+            .send()
+            .unwrap();
 
-    let status_code = response.status();
-    if status_code.is_client_error() {
-        let response_body = response.json::<serde_json::Value>().unwrap();
-        let error_message = response_body["error"]["message"].as_str().unwrap();
-        spinner.stop_and_persist(
-            "✖".red().to_string().as_str(),
-            format!("API error: \"{error_message}\"").red().to_string(),
+        let status_code = response.status();
+        if status_code.is_client_error() {
+            let response_body = response.json::<serde_json::Value>().unwrap();
+            let error_message = response_body["error"]["message"].as_str().unwrap();
+            sp_cmd_gen.stop_and_persist(
+                "✖".red().to_string().as_str(),
+                format!("API error: \"{error_message}\"").red().to_string(),
+            );
+            std::process::exit(1);
+        } else if status_code.is_server_error() {
+            sp_cmd_gen.stop_and_persist(
+                "✖".red().to_string().as_str(),
+                format!("Please check if Ollama is up and running. Status code: {status_code}")
+                    .red()
+                    .to_string(),
+            );
+            std::process::exit(1);
+        }
+
+        code = response.json::<serde_json::Value>().unwrap()["response"]
+            .as_str()
+            .unwrap()
+            .trim()
+            .to_string();
+
+        sp_cmd_gen.stop_and_persist(
+            "✔".green().to_string().as_str(),
+            "Got some code!".green().to_string(),
         );
-        std::process::exit(1);
-    } else if status_code.is_server_error() {
-        spinner.stop_and_persist(
-            "✖".red().to_string().as_str(),
-            format!("Please check if Ollama is up and running. Status code: {status_code}")
-                .red()
-                .to_string(),
-        );
-        std::process::exit(1);
+
+        PrettyPrinter::new()
+            .input_from_bytes(code.as_bytes())
+            .language("bash")
+            .grid(true)
+            .print()
+            .unwrap();
+
+        let answer = Question::new(
+            ">> Run the generated program? [Y/n/r]"
+                .bright_black()
+                .to_string()
+                .as_str(),
+        )
+        .default(Answer::YES)
+        .accept("y")
+        .accept("n")
+        .accept("r")
+        .until_acceptable()
+        .ask()
+        .expect("Couldn't ask question.");
+        match answer {
+            Answer::YES => should_run = true,
+            Answer::RESPONSE(response) => {
+                match response.to_lowercase().as_str() {
+                    "y" => should_run = true,
+                    "r" => should_run = false,
+                    _ => {
+                        std::process::exit(0);
+                    },
+                }
+            },
+            _ => should_run = false,
+        };
     }
-
-    let code = response.json::<serde_json::Value>().unwrap()["response"]
-        .as_str()
-        .unwrap()
-        .trim()
-        .to_string();
-
-    spinner.stop_and_persist(
-        "✔".green().to_string().as_str(),
-        "Got some code!".green().to_string(),
-    );
-
-    PrettyPrinter::new()
-        .input_from_bytes(code.as_bytes())
-        .language("bash")
-        .grid(true)
-        .print()
-        .unwrap();
-
-    let answer = Question::new(
-        ">> Run the generated program? [Y/n/r]"
-            .bright_black()
-            .to_string()
-            .as_str(),
-    )
-    .default(Answer::YES)
-    .accept("y")
-    .accept("n")
-    .accept("r")
-    .until_acceptable()
-    .ask()
-    .expect("Couldn't ask question.");
-    match answer {
-        Answer::YES => should_run = true,
-        Answer::RESPONSE(response) => {
-            match response.to_lowercase().as_str() {
-                "y" => should_run = true,
-                "r" => should_run = false,
-                _ => {
-                    std::process::exit(0);
-                },
-            }
-        },
-        _ => should_run = false,
-    };
 
     if should_run {
         config.write_to_history(code.as_str());
-        spinner = Spinner::new(Spinners::BouncingBar, "Executing...".into());
+        let mut sp_cmd_run = Spinner::new(Spinners::BouncingBar, "Executing...".into());
 
         let output = Command::new("bash")
             .arg("-c")
             .arg(code.as_str())
             .output()
             .unwrap_or_else(|_| {
-                spinner.stop_and_persist(
+                sp_cmd_run.stop_and_persist(
                     "✖".red().to_string().as_str(),
                     "Failed to execute the generated program.".red().to_string(),
                 );
@@ -126,7 +129,7 @@ fn main() {
             });
 
         if !output.status.success() {
-            spinner.stop_and_persist(
+            sp_cmd_run.stop_and_persist(
                 "✖".red().to_string().as_str(),
                 "The program threw an error.".red().to_string(),
             );
@@ -134,7 +137,7 @@ fn main() {
             std::process::exit(1);
         }
 
-        spinner.stop_and_persist(
+        sp_cmd_run.stop_and_persist(
             "✔".green().to_string().as_str(),
             "Command ran successfully".green().to_string(),
         );
