@@ -1,34 +1,24 @@
-# Copilot, for your terminal
+# Copilot, for your terminal using Ollama
 
-A CLI tool that generates shell scripts from a human readable description.
+A CLI tool that generates shell scripts from a human readable description with locally running LLMs.
 
-## Installation
+## Requrements
 
-You can install `plz` by running the following command in your terminal.
+- Working [Ollama](https://ollama.ai/) setup
+- Desired model pulled (default: codellama) (ie. `ollama pull codellama`)
+- Make sure you have the latest version of rust installed (use [rustup](https://rustup.rs/)).
 
-```
-curl -fsSL https://raw.githubusercontent.com/m1guelpf/plz-cli/main/install.sh | sh -
-```
+## Setup and Installation
 
-### Homebrew
-
-You can also install `plz` using [Homebrew](https://brew.sh/).
-
-```sh
-$ brew install plz-cli
-```
-
-You may need to close and reopen your terminal after installation. Alternatively, you can download the binary corresponding to your OS from the [latest release](https://github.com/m1guelpf/plz-cli/releases/latest).
+Clone this repo and build with `cargo build`, then you can find built binary in `target/debug/plz`.
 
 ## Usage
 
-`plz` uses [GPT-3](https://beta.openai.com/). To use it, you'll need to grab an API key from [your dashboard](https://beta.openai.com/), and save it to `OPENAI_API_KEY` as follows (you can also save it in your bash/zsh profile for persistance between sessions).
+This fork is updated to talk to locally running LLMs using Ollama. The model defaults to `codellama`.
 
-```bash
-export OPENAI_API_KEY='sk-XXXXXXXX'
-```
+You can configure which model to use by setting `PLZ_MODEL_NAME` env var. You can also configure base API URL by setting `OLLAMA_API_BASE` env var. (default: http://localhost:11434/api)
 
-Once you have configured your environment, run `plz` followed by whatever it is that you want to do (`plz show me all options for the plz cli`).
+If you don't like the generated command in the first attempt, you can chose `r` option to regenerate.
 
 To get a full overview of all available options, run `plz --help`
 
@@ -36,20 +26,15 @@ To get a full overview of all available options, run `plz --help`
 $ plz --help
 Generates bash scripts from the command line
 
-Usage: plz [OPTIONS] <PROMPT>
+Usage: plz [PROMPT]
 
 Arguments:
-  <PROMPT>  Description of the command to execute
+  [PROMPT]  Description of the command to execute
 
 Options:
-  -y, --force    Run the generated program without asking for confirmation
   -h, --help     Print help information
   -V, --version  Print version information
 ```
-
-## Develop
-
-Make sure you have the latest version of rust installed (use [rustup](https://rustup.rs/)). Then, you can build the project by running `cargo build`, and run it with `cargo run`.
 
 ## License
 
