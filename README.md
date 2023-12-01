@@ -14,9 +14,11 @@ Clone this repo and build with `cargo build`, then you can find built binary in 
 
 ## Usage
 
-Original `plz` uses [GPT-3](https://beta.openai.com/). This is a fork of original `plz` updated to talk to locally running LLMs using Ollama. The model defaults to `codellama`.
+This fork is updated to talk to locally running LLMs using Ollama. The model defaults to `codellama`.
 
 You can configure which model to use by setting `PLZ_MODEL_NAME` env var. You can also configure base API URL by setting `OLLAMA_API_BASE` env var. (default: http://localhost:11434/api)
+
+If you don't like the generated command in the first attempt, you can chose `r` option to regenerate.
 
 To get a full overview of all available options, run `plz --help`
 
@@ -24,13 +26,12 @@ To get a full overview of all available options, run `plz --help`
 $ plz --help
 Generates bash scripts from the command line
 
-Usage: plz [OPTIONS] <PROMPT>
+Usage: plz [PROMPT]
 
 Arguments:
-  <PROMPT>  Description of the command to execute
+  [PROMPT]  Description of the command to execute
 
 Options:
-  -y, --force    Run the generated program without asking for confirmation
   -h, --help     Print help information
   -V, --version  Print version information
 ```
